@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ album.title }}{% endblock %}
+
+{% block content %}
+<div class="blog-detail">
+  {% if user.is_authenticated and user.is_admin_user %}
+    <div class="action-bar">
+      <a href="{% url 'album_edit' album.id %}" class="btn-outline btn-sm">编辑</a>
+      <form method="post" action="{% url 'album_delete' album.id %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger btn-sm" onclick="return confirm('确定要删除这个相册吗？')">删除</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <h1 class="detail-title">{{ album.title }}</h1>
+  <div class="detail-meta">
+    {{ album.created_at|date:"Y-m-d H:i" }} · {{ photos|length }} 张照片
+  </div>
+  {% if album.description %}
+    <p class="detail-content">{{ album.description }}</p>
+  {% endif %}
+
+  <div class="album-grid">
+    {% for photo in photos %}
+      <div class="album-item photo-item">
+        <img src="{{ photo.image.url }}" class="album-img" alt="相册照片" onclick="openLightbox({{ forloop.counter0 }})">
+        {% if user.is_authenticated and user.is_admin_user %}
+          <form method="post" action="{% url 'photo_delete' photo.id %}" class="photo-delete-btn" onsubmit="return confirm('确定要删除这张照片吗？')">
+            {% csrf_token %}
+            <button type="submit" title="删除照片"><i class="fa fa-trash"></i></button>
+          </form>
+        {% endif %}
+      </div>
+    {% empty %}
+      <p style="color:#999;grid-column:1/-1;text-align:center;padding:2rem;">这个相册还没有照片~</p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- 灯箱 -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close" title="关闭">&times;</span>
+  <span class="lightbox-arrow lightbox-prev" title="上一张" onclick="event.stopPropagation();changePhoto(-1)">&#8249;</span>
+  <span class="lightbox-arrow lightbox-next" title="下一张" onclick="event.stopPropagation();changePhoto(1)">&#8250;</span>
+  <img id="lightboxImg" class="lightbox-img" src="" alt="放大查看">
+</div>
+
+<script>
+const albumPhotos = [
+  {% for photo in photos %}"{{ photo.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}
+];
+var currentIndex = 0;
+
+function openLightbox(idx) {
+  currentIndex = idx;
+  document.getElementById('lightboxImg').src = albumPhotos[idx];
+  document.getElementById('lightbox').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+  document.body.style.overflow = '';
+}
+function changePhoto(delta) {
+  currentIndex = (currentIndex + delta + albumPhotos.length) % albumPhotos.length;
+  document.getElementById('lightboxImg').src = albumPhotos[currentIndex];
+}
+document.addEventListener('keydown', function(e) {
+  var lb = document.getElementById('lightbox');
+  if (!lb.classList.contains('active')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') changePhoto(-1);
+  if (e.key === 'ArrowRight') changePhoto(1);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}个人博客{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="{% url 'home' %}" class="logo">✨ {{ blog_owner.nickname|default:"我的" }}の宝藏空间</a>
+      <div class="nav-menu">
+        <a href="{% url 'home' %}" class="{% if request.path == '/' %}active{% endif %}">首页</a>
+        <a href="{% url 'shuo_list' %}" class="{% block nav_shuo %}{% if '/shuo/' in request.path %}active{% endif %}{% endblock %}">说说</a>
+        <a href="{% url 'blog_list' %}" class="{% block nav_blog %}{% if '/blog/' in request.path or '/post/' in request.path %}active{% endif %}{% endblock %}">博客</a>
+        <a href="{% url 'album_list' %}" class="{% if '/album/' in request.path or '/photo/' in request.path %}active{% endif %}">相册</a>
+        <span class="nav-divider" aria-hidden="true"></span>
+        {% if user.is_authenticated %}
+          <span style="color:#4a6cf7;font-weight:600;">{{ user.username }}</span>
+          {% if user.is_admin_user %}
+            <a href="{% url 'profile_edit' %}">编辑资料</a>
+          {% endif %}
+          <a href="{% url 'logout' %}" class="login-btn">登出</a>
+        {% else %}
+          <a href="{% url 'login' %}" class="login-btn">登录</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+
+  <div id="copyToast" class="copy-toast">已复制</div>
+
+  <script>
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(showToast);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast();
+      }
+    }
+    function showToast() {
+      var toast = document.getElementById('copyToast');
+      toast.classList.add('show');
+      setTimeout(function() { toast.classList.remove('show'); }, 1500);
+    }
+    document.querySelectorAll('.copy-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        copyToClipboard(this.getAttribute('data-copy'));
+      });
+    });
+    document.querySelectorAll('.share-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        copyToClipboard(window.location.href);
+      });
+    });
+  </script>
+</body>
+</html>

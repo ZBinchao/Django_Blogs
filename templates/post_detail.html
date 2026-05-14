@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block nav_blog %}{% if post.post_type == 'blog' %}active{% endif %}{% endblock %}
+{% block nav_shuo %}{% if post.post_type == 'shuo' %}active{% endif %}{% endblock %}
+
+{% block content %}
+<div class="blog-detail">
+  {% if user.is_authenticated and user.is_admin_user %}
+    <div class="action-bar">
+      <a href="{% url 'post_edit' post.id %}" class="btn-outline btn-sm">编辑</a>
+      <form method="post" action="{% url 'post_delete' post.id %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger btn-sm" onclick="return confirm('确定要删除这篇博文吗？')">删除</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <h1 class="detail-title">{{ post.title }}</h1>
+  <div class="detail-meta">
+    {{ post.created_at|date:"Y-m-d H:i" }}
+    · {% if post.post_type == 'blog' %}技术文章{% else %}生活说说{% endif %}
+    · {{ post.author.username }}
+  </div>
+  <div class="detail-content">
+    {{ post.content|linebreaks }}
+  </div>
+  {% if post.cover %}
+    <img src="{{ post.cover.url }}" alt="{{ post.title }}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;margin-bottom:1rem;display:block;">
+  {% endif %}
+
+  <!-- 点赞 -->
+  <div class="like-box" id="post-interact">
+    {% if user.is_authenticated %}
+      {% csrf_token %}
+      <button class="like-btn {% if user_liked %}liked{% endif %}" id="likeBtn" onclick="toggleLike({{ post.id }})">
+        <i class="fa fa-heart"></i>
+      </button>
+    {% else %}
+      <button class="like-btn" disabled>
+        <i class="fa fa-heart"></i>
+      </button>
+    {% endif %}
+    <span id="likeText">{{ post.like_count }} 人觉得很赞</span>
+  </div>
+
+  <!-- 评论区 -->
+  <div class="comment-section">
+    <h3 class="section-title">评论 ({{ post.comment_count }})</h3>
+
+    {% if user.is_authenticated %}
+      {% csrf_token %}
+      <textarea class="comment-input" id="commentInput" rows="3" placeholder="分享你的想法..."></textarea>
+      <div style="display:flex;justify-content:flex-start;margin-top:0.5rem;">
+        <button class="comment-btn" onclick="submitComment({{ post.id }})">发布评论</button>
+        <button type="button" class="share-btn" onclick="copyToClipboard(window.location.href)">转发</button>
+      </div>
+    {% else %}
+      <p style="color:#999;margin-bottom:1rem;">
+        <a href="{% url 'login' %}">登录</a>后才能评论
+      </p>
+    {% endif %}
+
+    <div class="comment-list" id="commentList">
+      {% for comment in comments %}
+        <div class="comment-item">
+          <div class="comment-user">{{ comment.user.username }}{% if comment.user.is_admin_user %} <span class="author-badge">作者</span>{% endif %}</div>
+          <div class="comment-text">{{ comment.content }}</div>
+          <div class="comment-time">{{ comment.created_at|date:"Y-m-d H:i" }}</div>
+        </div>
+      {% empty %}
+        <p style="color:#999;" id="noComment">还没有评论，来说两句吧~</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+function getCSRF() {
+  return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    var toast = document.getElementById('copyToast');
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 1500);
+  });
+}
+
+async function toggleLike(postId) {
+  const resp = await fetch('/post/' + postId + '/like/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCSRF() }
+  });
+  const data = await resp.json();
+  const btn = document.getElementById('likeBtn');
+  if (data.liked) {
+    btn.classList.add('liked');
+  } else {
+    btn.classList.remove('liked');
+  }
+  document.getElementById('likeText').textContent = data.like_count + ' 人觉得很赞';
+}
+
+async function submitComment(postId) {
+  const input = document.getElementById('commentInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const formData = new FormData();
+  formData.append('content', text);
+  formData.append('csrfmiddlewaretoken', getCSRF());
+  const resp = await fetch('/post/' + postId + '/comment/', {
+    method: 'POST',
+    body: formData
+  });
+  const data = await resp.json();
+  if (data.success) {
+    const badge = data.is_admin ? ' <span class="author-badge">作者</span>' : '';
+    const html = '<div class="comment-item">' +
+      '<div class="comment-user">' + data.username + badge + '</div>' +
+      '<div class="comment-text">' + data.content + '</div>' +
+      '<div class="comment-time">' + data.created_at + '</div>' +
+      '</div>';
+    document.getElementById('commentList').insertAdjacentHTML('afterbegin', html);
+    document.getElementById('noComment')?.remove();
+    input.value = '';
+  }
+}
+</script>
+{% endblock %}

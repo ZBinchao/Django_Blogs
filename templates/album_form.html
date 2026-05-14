@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ action }}相册{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width:600px;">
+  <h2 class="section-title">{{ action }}相册</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="{{ album_form.title.id_for_label }}">主题</label>
+      {{ album_form.title }}
+    </div>
+    <div class="form-group">
+      <label for="{{ album_form.description.id_for_label }}">简介</label>
+      {{ album_form.description }}
+    </div>
+    <div class="form-group">
+      <label for="{{ album_form.cover.id_for_label }}">封面</label>
+      {{ album_form.cover }}
+    </div>
+    {% if action == '创建' %}
+      <div class="form-group">
+        <label for="images">选择照片（可多选）</label>
+        <input type="file" name="images" id="images" multiple accept="image/*" style="display:block;margin-top:0.3rem;">
+      </div>
+    {% else %}
+      <div class="form-group">
+        <label for="images">添加更多照片（可多选）</label>
+        <input type="file" name="images" id="images" multiple accept="image/*" style="display:block;margin-top:0.3rem;">
+      </div>
+    {% endif %}
+    <button type="submit" class="btn-primary">保存</button>
+    <a href="javascript:history.back()" class="btn-outline" style="margin-left:0.5rem;">取消</a>
+  </form>
+</div>
+{% endblock %}

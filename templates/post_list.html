@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ list_title }}{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+  <h3 class="section-title" style="margin-bottom:0;flex:1;">{{ list_title }}</h3>
+  {% if user.is_authenticated and user.is_admin_user %}
+    <a href="{% url 'post_create' %}" class="btn-primary">发布博文</a>
+  {% endif %}
+</div>
+
+<div class="blog-list">
+  {% for post in posts %}
+    <div class="blog-card" onclick="location.href='{% url 'post_detail' post.id %}'">
+      {% if post.cover %}
+        <img src="{{ post.cover.url }}" class="blog-cover" alt="{{ post.title }}" />
+      {% else %}
+        <img src="https://picsum.photos/600/300?q={{ post.id }}" class="blog-cover" alt="{{ post.title }}" />
+      {% endif %}
+      <div class="blog-body">
+        <h3 class="blog-title">{{ post.title }}</h3>
+        <div class="blog-meta">{{ post.created_at|date:"Y-m-d" }}</div>
+        <p class="blog-excerpt">{{ post.excerpt|truncatechars:100 }}</p>
+        <span class="read-more">阅读全文 →</span>
+      </div>
+    </div>
+  {% empty %}
+    <p style="color:#999;grid-column:1/-1;text-align:center;padding:2rem;">还没有内容哦~</p>
+  {% endfor %}
+</div>
+{% endblock %}

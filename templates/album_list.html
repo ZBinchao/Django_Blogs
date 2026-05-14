@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}相册{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+  <h3 class="section-title" style="margin-bottom:0;flex:1;">我的相册</h3>
+  {% if user.is_authenticated and user.is_admin_user %}
+    <a href="{% url 'album_create' %}" class="btn-primary">创建相册</a>
+  {% endif %}
+</div>
+
+<div class="album-grid">
+  {% for album in albums %}
+    <div class="album-card" onclick="location.href='{% url 'album_detail' album.id %}'">
+      {% if album.cover %}
+        <img src="{{ album.cover.url }}" class="album-img" alt="{{ album.title }}" />
+      {% else %}
+        {% with album.photos.first as first_photo %}
+          {% if first_photo %}
+            <img src="{{ first_photo.image.url }}" class="album-img" alt="{{ album.title }}" />
+          {% else %}
+            <img src="https://picsum.photos/400/400?album{{ album.id }}" class="album-img" alt="{{ album.title }}" />
+          {% endif %}
+        {% endwith %}
+      {% endif %}
+      <div class="album-card-body">
+        <h3 class="album-card-title">{{ album.title }}</h3>
+        <div class="album-card-desc">{{ album.description|truncatechars:30 }}</div>
+        <div class="blog-meta">{{ album.photo_count }} 张照片</div>
+      </div>
+    </div>
+  {% empty %}
+    <p style="color:#999;grid-column:1/-1;text-align:center;padding:2rem;">还没有相册~</p>
+  {% endfor %}
+</div>
+{% endblock %}
