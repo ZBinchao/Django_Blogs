@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}搜索结果 - {{ keyword }}{% endblock %}
+
+{% block content %}
+<!-- 搜索框 -->
+<div style="margin: 20px 0; text-align:center;">
+    <form action="{% url 'search' %}" method="get">
+        <input
+            type="text"
+            name="q"
+            placeholder="搜索博客、说说..."
+            style="width: 60%; max-width:500px; padding:8px;"
+            required
+            value="{{ keyword }}"
+        >
+        <button type="submit" style="padding:8px 16px;">搜索</button>
+    </form>
+</div>
+
+<!-- 搜索结果标题 -->
+<div style="margin-bottom: 1.5rem;">
+    <h3 class="section-title">🔍 搜索结果：「{{ keyword }}」</h3>
+    <hr style="border-color:#eef1f6;">
+</div>
+
+<!-- 搜索结果列表 -->
+<div class="blog-list">
+    {% if posts %}
+        {% for post in posts %}
+        <div class="blog-card" onclick="location.href='{% url 'post_detail' post.id %}'">
+            {% if post.cover %}
+                <img src="{{ post.cover.url }}" class="blog-cover" alt="{{ post.title }}" />
+            {% else %}
+                <img src="https://picsum.photos/600/300?q={{ post.id }}" class="blog-cover" alt="{{ post.title }}" />
+            {% endif %}
+            <div class="blog-body">
+                <div class="blog-type-tag" style="display:inline-block; padding:2px 8px; background:#e8f4ff; color:#4a6cf7; border-radius:4px; font-size:12px; margin-bottom:0.5rem;">
+                    {% if post.post_type == 'blog' %}技术文章{% else %}生活说说{% endif %}
+                </div>
+                <h3 class="blog-title">{{ post.title }}</h3>
+                <div class="blog-meta">
+                    {{ post.created_at|date:"Y-m-d" }} · {{ post.post_type|title }}
+                </div>
+                <p class="blog-excerpt">{{ post.content|truncatechars:100 }}</p>
+                <span class="read-more">阅读全文 →</span>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color:#999;grid-column:1/-1;text-align:center;padding:2rem;">
+            未找到相关内容，请更换关键词后重试~
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

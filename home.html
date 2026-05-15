@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}个人博客 - 首页{% endblock %}
+
+{% block content %}
+
+<!-- 搜索框 -->
+<div style="margin: 20px 0; text-align:center;">
+    <form action="{% url 'search' %}" method="get">
+        <input
+            type="text"
+            name="q"
+            placeholder="搜索博客、说说..."
+            style="width: 60%; max-width:500px; padding:8px;"
+            required
+        >
+        <button type="submit" style="padding:8px 16px;">搜索</button>
+    </form>
+</div>
+
+<div class="home-top-layout">
+  <div class="home-profile">
+    <div class="profile-card">
+      <div class="profile-top">
+        <div class="profile-avatar-box">
+          <div class="avatar-wrap">
+            {% if admin_user and admin_user.avatar %}
+              <img src="{{ admin_user.avatar.url }}" alt="头像" class="avatar" />
+            {% else %}
+              <img src="https://picsum.photos/200/200" alt="头像" class="avatar" />
+            {% endif %}
+          </div>
+        </div>
+        <div class="profile-main">
+          <h2 class="name">{{ admin_user.nickname|default:"博主" }}</h2>
+          <div class="position">{{ admin_user.position|default:"还没有填写简介" }}</div>
+          <p class="bio">{{ admin_user.bio|default:"欢迎来到我的博客，在这里记录技术学习和生活日常。" }}</p>
+        </div>
+      </div>
+      <div class="intro-tags">
+        {% for tag in admin_user.tag_list %}
+          <span class="intro-tag">{{ tag }}</span>
+        {% empty %}
+          <span class="intro-tag">技术分享</span>
+          <span class="intro-tag">生活记录</span>
+        {% endfor %}
+      </div>
+      <div class="profile-bottom">
+        <div class="stats">
+          <button class="stat-item" type="button" aria-label="文章数量">
+            <span>{{ total_articles }}</span>
+            <small class="stat-label">文章</small>
+          </button>
+          <button class="stat-item" type="button" aria-label="点赞数量">
+            <span>{{ total_likes }}</span>
+            <small class="stat-label">点赞</small>
+          </button>
+          <button class="stat-item" type="button" aria-label="照片数量">
+            <span>{{ total_photos }}</span>
+            <small class="stat-label">照片</small>
+          </button>
+        </div>
+        <div class="social-links" aria-label="社交入口">
+          {% if admin_user.github %}
+            <a class="social-btn" href="{{ admin_user.github }}" target="_blank" aria-label="GitHub"><i class="fa fa-github"></i></a>
+          {% endif %}
+          {% if admin_user.email %}
+            <span class="social-btn copy-btn" data-copy="{{ admin_user.email }}" aria-label="邮箱" title="点击复制邮箱"><i class="fa fa-envelope-o"></i></span>
+          {% endif %}
+          {% if admin_user.qq %}
+            <span class="social-btn copy-btn" data-copy="{{ admin_user.qq }}" aria-label="QQ" title="点击复制QQ"><i class="fa fa-qq"></i></span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="home-shuo-panel">
+    <div class="home-shuo-head">
+      <h3 class="home-shuo-title">说说动态</h3>
+      <a href="{% url 'shuo_list' %}" class="home-shuo-more">查看更多</a>
+    </div>
+    <div class="home-shuo-list">
+      {% for shuo in recent_shuos %}
+        <article class="home-shuo-item" onclick="location.href='{% url 'post_detail' shuo.id %}'">
+          <h4 class="shuo-title">{{ shuo.title }}</h4>
+          <div class="blog-meta">{{ shuo.created_at|date:"Y-m-d" }}</div>
+          <p class="shuo-content">{{ shuo.excerpt|default:shuo.content|truncatechars:80 }}</p>
+          {% if shuo.cover %}
+            <img src="{{ shuo.cover.url }}" class="shuo-media" alt="{{ shuo.title }}">
+          {% endif %}
+        </article>
+      {% empty %}
+        <p style="color:#999;text-align:center;padding:1rem;">还没有说说哦~</p>
+      {% endfor %}
+    </div>
+  </aside>
+</div>
+
+<h3 class="section-title">最新博客</h3>
+<div class="blog-list">
+  {% for blog in recent_blogs %}
+    <div class="blog-card" onclick="location.href='{% url 'post_detail' blog.id %}'">
+      {% if blog.cover %}
+        <img src="{{ blog.cover.url }}" class="blog-cover" alt="{{ blog.title }}" />
+      {% else %}
+        <img src="https://picsum.photos/600/300?q={{ blog.id }}" class="blog-cover" alt="{{ blog.title }}" />
+      {% endif %}
+      <div class="blog-body">
+        <h3 class="blog-title">{{ blog.title }}</h3>
+        <div class="blog-meta">{{ blog.created_at|date:"Y-m-d" }}</div>
+        <p class="blog-excerpt">{{ blog.excerpt }}</p>
+        <span class="read-more">阅读全文 →</span>
+      </div>
+    </div>
+  {% empty %}
+    <p style="color:#999;grid-column:1/-1;text-align:center;padding:2rem;">还没有博客文章~</p>
+  {% endfor %}
+</div>
+
+{% if recent_albums %}
+  <h3 class="section-title" style="margin-top:2rem;">最新相册</h3>
+  <div class="album-grid">
+    {% for album in recent_albums %}
+      <div class="album-card" onclick="location.href='{% url 'album_detail' album.id %}'">
+        {% if album.cover %}
+          <img src="{{ album.cover.url }}" class="album-img" alt="{{ album.title }}" />
+        {% else %}
+          {% with album.photos.first as first_photo %}
+            {% if first_photo %}
+              <img src="{{ first_photo.image.url }}" class="album-img" alt="{{ album.title }}" />
+            {% else %}
+              <img src="https://picsum.photos/400/400?album{{ album.id }}" class="album-img" alt="{{ album.title }}" />
+            {% endif %}
+          {% endwith %}
+        {% endif %}
+        <div class="album-card-body">
+          <h3 class="album-card-title">{{ album.title }}</h3>
+          <div class="album-card-desc">{{ album.description|truncatechars:30 }}</div>
+          <div class="blog-meta">{{ album.photo_count }} 张照片</div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}
